@@ -1,0 +1,22 @@
+name: RDP Access via LocalTunnel
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - name: Download LocalTunnel
+      run: npm install -g localtunnel
+    - name: Enable Terminal Services
+      run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+    - name: Enable Remote Desktop Firewall Rule
+      run: Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+    - name: Configure RDP User Authentication
+      run: Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+    - name: Set Runner Admin Password
+      run: Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
+    - name: Create LocalTunnel for RDP
+      run: lt --port 3389 --subdomain yourdesiredsubdomain
