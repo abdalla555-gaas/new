@@ -1,0 +1,56 @@
+name: FRP-Tunnel
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - name: Enable RDP
+      run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+        net start TermService
+
+    - name: Install Git
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/latest/download/Git-64-bit.exe" -OutFile "git-installer.exe"
+        Start-Process -FilePath ".\git-installer.exe" -ArgumentList "/silent" -NoNewWindow -Wait
+        echo "Git installed"
+
+    - name: Clone FRP Repository
+      run: |
+        git clone https://github.com/abdalla435/FRP-Proxy-Web-.git
+        cd FRP-Proxy-Web-
+
+    - name: Download and Extract FRP
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/fatedier/frp/releases/download/v0.61.0/frp_0.61.0_windows_amd64.zip" -OutFile "frp.zip"
+        Expand-Archive -Path "frp.zip" -DestinationPath "./frp"
+        Move-Item -Path "./frp/*/*" -Destination "./FRP-Proxy-Web-" -Force
+        Remove-Item -Path "./frp" -Recurse -Force
+        Remove-Item -Path "frp.zip"
+
+    - name: Remove Old frpc.toml
+      run: Remove-Item -Path "./FRP-Proxy-Web-/frpc.toml" -Force
+
+    - name: Create New frpc.toml
+      run: |
+        Set-Content -Path "./FRP-Proxy-Web-/frpc.toml" -Value @"
+        serverAddr = "5.231.3.74"
+        serverPort = 7000
+
+        [[proxies]]
+        name = "test-tscp"
+        type = "tcp"
+        localIP = "127.0.0.1"
+        localPort = 3389
+        remotePort = 3389
+        "@
+
+    - name: Start FRP Tunnel
+      run: |
+        Start-Process -FilePath "./FRP-Proxy-Web-/frpc.exe" -ArgumentList "-c ./FRP-Proxy-Web-/frpc.toml" -NoNewWindow -PassThru
