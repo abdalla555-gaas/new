@@ -1,0 +1,45 @@
+name: FRP-Proxy-Setup
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Clone Repository
+      run: git clone https://github.com/abdalla435/FRP-Proxy-Web-.git
+      
+    - name: Change Directory
+      run: cd FRP-Proxy-Web-
+      
+    - name: Download and Extract FRP
+      run: |
+        Invoke-WebRequest -Uri "https://github.com/fatedier/frp/releases/download/v0.61.0/frp_0.61.0_windows_amd64.zip" -OutFile "frp.zip"
+        Expand-Archive -Path "frp.zip" -DestinationPath "frp"
+        Remove-Item "frp.zip"
+        Copy-Item -Path "frp/frp_0.61.0_windows_amd64/*" -Destination "./" -Recurse
+        Remove-Item -Path "frp/frp_0.61.0_windows_amd64" -Recurse -Force
+    - name: Remove Old `frpc.toml`
+      run: Remove-Item -Path "frpc.toml" -Force
+
+    - name: Create New `frpc.toml`
+      run: |
+        Set-Content -Path "frpc.toml" -Value @"
+        serverAddr = "5.231.3.74"
+        serverPort = 7000
+        [[proxies]]
+        name = "test-35t6scp"
+        type = "tcp"
+        localIP = "127.0.0.1"
+        localPort = 3389
+        remotePort = 3390
+        "@
+    - name: Enable Remote Desktop
+      run: |
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+        Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+        Set-LocalUser -Name "runneradmin" -Password (ConvertTo-SecureString -AsPlainText "P@ssw0rd!" -Force)
+    - name: Start FRP Tunnel [ USER : runneradmin - PASS : P@ssw0rd!]
+      run: .\frpc.exe -c frpc.toml
