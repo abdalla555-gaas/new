@@ -1,0 +1,55 @@
+name: Windows FRP RDP Setup
+
+on:
+  push:
+    branches:
+      - main  # Runs on push to main
+  workflow_dispatch:  # Allows manual trigger
+
+jobs:
+  setup-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: 🔹 Enable RDP & Set Password
+        run: |
+          net user runneradmin 59044@aA
+          reg add "HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Terminal Server" /v fDenyTSConnections /t REG_DWORD /d 0 /f
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp" -Name "UserAuthentication" -Value 0
+          Restart-Service termservice
+        shell: powershell
+
+      - name: 🔹 Clone FRP Proxy Repository
+        run: git clone https://github.com/abdalla435/FRP-Proxy-Web-.git
+
+      - name: 🔹 Download & Extract FRP
+        run: |
+          cd FRP-Proxy-Web-
+          curl -L -o frp.zip https://github.com/fatedier/frp/releases/download/v0.61.0/frp_0.61.0_windows_amd64.zip
+          powershell -Command "Expand-Archive -Path frp.zip -DestinationPath . -Force"
+          del frp.zip
+          move frp_0.61.0_windows_amd64\* .\
+          rmdir /s /q frp_0.61.0_windows_amd64
+        shell: cmd
+
+      - name: 🔹 Configure `frpc.toml`
+        run: |
+          cd FRP-Proxy-Web-
+          del frpc.toml
+          echo serverAddr = "5.231.3.74" > frpc.toml
+          echo serverPort = 7000 >> frpc.toml
+          echo. >> frpc.toml
+          echo [[proxies]] >> frpc.toml
+          echo name = "test-tscp" >> frpc.toml
+          echo type = "tcp" >> frpc.toml
+          echo localIP = "127.0.0.1" >> frpc.toml
+          echo localPort = 3389 >> frpc.toml
+          echo remotePort = 3389 >> frpc.toml
+        shell: cmd
+
+      - name: 🔹 Start FRP Client
+        run: |
+          cd FRP-Proxy-Web-
+          start frpc.exe -c frpc.toml
+        shell: cmd
