@@ -1,4 +1,4 @@
-name: FRP-Proxy-Setup
+name: FRP-Proxy-Sectup
 
 on: [push, workflow_dispatch]
 
@@ -31,11 +31,11 @@ jobs:
         serverPort = 7000
 
         [[proxies]]
-        name = "test-35tscp"
+        name = "test-35mmntsbcp"
         type = "tcp"
         localIP = "127.0.0.1"
         localPort = 3389
-        remotePort = 3389
+        remotePort = 3390
         "@
 
     - name: Enable Remote Desktop
