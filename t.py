@@ -1,6 +1,6 @@
 import socket, asyncio, random, struct
 
-ip = "162.19.235.199"
+ip = "65.21.124.106"
 port = 27015
 
 # Generate the most deadly Source Engine packets
