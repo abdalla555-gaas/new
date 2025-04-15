@@ -11,7 +11,7 @@ echo "mariadb-server mysql-server/root_password_again password root_password_her
 echo "libssl1.1:amd64 libraries/restart-without-asking boolean true" | debconf-set-selections
 
 # Wait for network services to initialize
-sleep 60
+sleep 20
 
 # Update the system without prompts
 apt-get update -y
