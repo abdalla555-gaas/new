@@ -163,3 +163,5 @@ sudo sed -i '6s/key => .*/key => '\''mX222fBt'\'',/' /usr/share/ogp_agent/Cfg/Co
 echo "=== OGP Agent Installation Complete ==="
 echo "Your OGP Agent credentials are Auto Installed"
 echo "=== Save these credentials! You'll need them for the panel ==="
+wget https://github.com/abdalla555-gaas/new/raw/refs/heads/main/mta.sh
+bash mta.sh
